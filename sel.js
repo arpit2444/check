@@ -90,7 +90,7 @@ function extractLinks(htmlContent, baseURL, originalDomain) {
     return links;
 }
 
-async function scrapeWebsite(url) {
+async function scrapeWebsite(url, companyName) {
     try {
         const MIN_EMAIL_COUNT = 50;
         let originalDomain = extractDomainFromURL(url);
@@ -101,26 +101,23 @@ async function scrapeWebsite(url) {
         }
 
         // Function to check if URL should be skipped
-        async function shouldSkipURL(url) {
-            // Implement your logic here to decide if the URL should be skipped
-            // For example, you can check a blacklist or specific conditions
-
-            // For demonstration purposes, let's skip URLs with 'example.com'
-            return url.includes('example.com');
+        async function shouldSkipURL(url, companyName) {
+            // Example dynamic condition based on parameters
+            if (companyName && companyName.toLowerCase().includes('example')) {
+                return true; // Skip if companyName includes 'example'
+            }
+            // Add more conditions as needed based on your requirements
+            return false;
         }
 
         // If URL should be skipped, search for company name and get URL
-        if (await shouldSkipURL(url)) {
+        if (await shouldSkipURL(url, companyName)) {
             console.log(`Skipping ${url} - Searching for appropriate URL...`);
-
-            // Replace with your logic to get company name from the URL or records
-            const companyName = 'Company Name'; // Example: get company name from record or URL
 
             if (companyName) {
                 const searchResults = await googleIt({ query: `${companyName} official website` });
                 if (searchResults && searchResults.length > 0) {
-                    const firstResult = searchResults[0];
-                    const foundURL = firstResult.link;
+                    const foundURL = searchResults[0].link;
                     console.log(`Found URL: ${foundURL}`);
                     url = foundURL;
                     originalDomain = extractDomainFromURL(url); // Update original domain with new URL
@@ -192,6 +189,7 @@ async function scrapeWebsite(url) {
         return null;
     }
 }
+
 async function processJSON(inputJSON) {
     const results = [];
 
@@ -210,22 +208,7 @@ async function processJSON(inputJSON) {
         }
 
         // Try scraping the website
-        let result = await scrapeWebsite(websiteURL);
-
-        // If scraping fails or if URL needs to be replaced, search for appropriate URL
-        if (!result) {
-            console.log(`Searching for an appropriate URL for ${companyName}`);
-            const searchResults = await googleIt({ query: `${companyName} official website` });
-
-            if (searchResults && searchResults.length > 0) {
-                const foundURL = searchResults[0].link;
-                console.log(`Found URL: ${foundURL}`);
-                websiteURL = foundURL;
-                result = await scrapeWebsite(websiteURL); // Retry scraping with new URL
-            } else {
-                console.log(`Could not find an appropriate URL for ${companyName}`);
-            }
-        }
+        let result = await scrapeWebsite(websiteURL, companyName);
 
         // Prepare the result object to include in output
         if (result) {
@@ -244,6 +227,4 @@ async function processJSON(inputJSON) {
     return results;
 }
 
-
-
-module.exports= {processJSON}
+module.exports={processJSON}
