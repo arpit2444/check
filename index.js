@@ -10,7 +10,7 @@ app.get("/", (req, res) => {
 });
 
 app.post('/api', (req, res) => {
-    const urls = req.body.urls;
+    const urls = req.body;
     processURLs(urls)
         .then(results => {
             console.log(JSON.stringify(results, null, 2));
