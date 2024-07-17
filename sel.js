@@ -195,7 +195,10 @@ async function processJSON(inputJSON) {
 
     for (const record of inputJSON) {
         let websiteURL = record['website'];
-        const companyName = record['companyName'];
+        let companyName
+        if( record['companyName']){
+        companyName = record['companyName']
+        }
 
         if (!websiteURL) {
             console.error(`Skipping record - Missing 'website' field`);
