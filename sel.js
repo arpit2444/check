@@ -192,46 +192,58 @@ async function scrapeWebsite(url) {
         return null;
     }
 }
-
 async function processJSON(inputJSON) {
-    const websites = inputJSON; // Assuming inputJSON is already an array of objects with 'website' URLs
-
     const results = [];
-    let successCount = 0;
 
-    for (const website of websites) {
-        let websiteURL = website['website'];
+    for (const record of inputJSON) {
+        let websiteURL = record['website'];
+        const companyName = record['companyName'];
 
         if (!websiteURL) {
             console.error(`Skipping record - Missing 'website' field`);
             continue;
         }
 
-        // Normalize URL if it doesn't start with 'http://' or 'https://'
+        // Normalize URL if needed
         if (!websiteURL.startsWith('http://') && !websiteURL.startsWith('https://')) {
             websiteURL = `http://${websiteURL}`;
         }
 
         // Try scraping the website
-        const result = await scrapeWebsite(websiteURL);
+        let result = await scrapeWebsite(websiteURL);
 
-        if (result) {
-            website['domain'] = result.domain;
-            if (result.emails && result.emails.length > 0) {
-                successCount++;
+        // If scraping fails or if URL needs to be replaced, search for appropriate URL
+        if (!result) {
+            console.log(`Searching for an appropriate URL for ${companyName}`);
+            const searchResults = await googleIt({ query: `${companyName} official website` });
+
+            if (searchResults && searchResults.length > 0) {
+                const foundURL = searchResults[0].link;
+                console.log(`Found URL: ${foundURL}`);
+                websiteURL = foundURL;
+                result = await scrapeWebsite(websiteURL); // Retry scraping with new URL
+            } else {
+                console.log(`Could not find an appropriate URL for ${companyName}`);
             }
-            website['emails'] = result.emails;
-            website['phones'] = result.phones;
-        } else {
-            website['emails'] = [];
-            website['phones'] = [];
         }
 
-        results.push(website);
+        // Prepare the result object to include in output
+        if (result) {
+            record['domain'] = result.domain;
+            record['emails'] = result.emails;
+            record['phones'] = result.phones;
+        } else {
+            record['domain'] = '';
+            record['emails'] = [];
+            record['phones'] = [];
+        }
+
+        results.push(record);
     }
 
     return results;
 }
+
 
 
 module.exports= {processJSON}
