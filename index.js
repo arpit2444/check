@@ -3,7 +3,7 @@
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT;
-const { processURLs } = require('./sel');
+const { processJSON } = require('./sel');
 
 app.get("/", (req, res) => {
     res.send("API running");
@@ -11,7 +11,7 @@ app.get("/", (req, res) => {
 
 app.post('/api', (req, res) => {
     const urls = req.body;
-    processURLs(urls)
+    processJSON(urls)
         .then(results => {
             console.log(JSON.stringify(results, null, 2));
             res.send(JSON.stringify(results, null, 2));
